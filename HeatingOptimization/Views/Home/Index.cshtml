@@ -1,0 +1,109 @@
+﻿@model List<Heating.Models.Fuel>
+@{
+    var minLoads = ViewBag.MinLoads as List<int>;
+    var results = ViewBag.Results as List<Heating.Models.Result>;
+    var totalHeat = ViewBag.TotalHeat as double?;
+}
+<form asp-action="Calculate" method="post">
+    <table>
+        <thead>
+            <tr>
+                <th>Топливо / # агрегата</th>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <th>
+                        <input type="text" name="fuels[@i].Name" value="@Model[i].Name" readonly />
+                    </th>
+                }
+                <th>Потребности агрегатов в топливе, т</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (minLoads != null)
+            {
+                @for (int j = 0; j < minLoads.Count; j++)
+                {
+                    <tr>
+                        <td>@((j + 1))</td>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <td>
+                                <input type="number" name="fuels[@i].Heating_values[@j]" value="@Model[i].Heating_values[j]" />
+                            </td>
+                        }
+                        <td>
+                            <input type="number" name="minLoads[@j]" value="@minLoads[j]" step="1" />
+                        </td>
+                    </tr>
+                }
+            }
+            <tr>
+                <td>Наличие сортов топлива, т</td>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <td>
+                        <input type="number" name="fuels[@i].Amount" step="0.01" value="@Model[i].Amount" />
+                    </td>
+                }
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+    <button type="submit">Рассчитать</button>
+</form>
+@if (results != null)
+{
+    <form asp-action="ExportToExcel" method="post">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            <input type="hidden" name="fuels[@i].Name" value="@Model[i].Name" />
+            <input type="hidden" name="fuels[@i].Amount" value="@Model[i].Amount" />
+            @for (int j = 0; j < Model[i].Heating_values.Count; j++)
+            {
+                <input type="hidden" name="fuels[@i].Heating_values[@j]" value="@Model[i].Heating_values[j]" />
+            }
+        }
+        @if (minLoads != null)
+        {
+            @for (int j = 0; j < minLoads.Count; j++)
+            {
+                <input type="hidden" name="minLoads[@j]" value="@minLoads[j]" />
+            }
+        }
+        @if (results != null)
+        {
+            @for (int i = 0; i < results.Count; i++)
+            {
+                <input type="hidden" name="results[@i].Name" value="@results[i].Name" />
+                <input type="hidden" name="results[@i].Amount" value="@results[i].Amount" />
+                <input type="hidden" name="results[@i].HeatProduced" value="@results[i].HeatProduced" />
+            }
+        }
+        <button type="submit">Экспортировать в Excel</button>
+    </form>
+}
+
+@if (results != null)
+{
+    <h2>Результаты расчета</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Топливо и агрегат</th>
+                <th>Количество (т)</th>
+                <th>Теплота (МДж)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var result in results)
+            {
+                <tr>
+                    <td>@result.Name</td>
+                    <td>@result.Amount</td>
+                    <td>@result.HeatProduced</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <h3>Общая теплота: @totalHeat МДж</h3>
+}
